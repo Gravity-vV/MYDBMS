@@ -53,113 +53,79 @@ int main()
 
 /* production for sql grammar */
 
-statements: statements statement | statement
-statement: createsql | showsql | selectsql | insertsql | deletesql | updatesql | dropsql | exitsql | usesql
+statements: statements statement | statement 
+statement: createsql | showsql | selectsql | insertsql | deletesql | updatesql | dropsql | exitsql | usesql | nextsql
+
+nextsql:		'\n' {printf("SQL>");}
 
 usesql: 		USE ID ';' '\n' {
-					printf("\n");
 					useDB($2);
-					printf("\nSQL>");
 		        }
 
 showsql: 		SHOW DATABASES ';' '\n' {
-					printf("\n");
 		            showDB();
-		            printf("\nSQL>");
 		        }
 		        |SHOW TABLES ';' '\n' {
-		        	printf("\n");
 		            showTable();
-		            printf("\nSQL>");
 		        }
 
-createsql:		CREATE TABLE ID '(' hyper_items ')' ';' '\n' {
-					printf("\n");
+createsql:		CREATE TABLE ID '(' hyper_items ')' ';' '\n' {//sql创建语句
                 	createTable($3, $5);
-                	printf("\nSQL>");
 				}
 
 				|CREATE DATABASE ID ';' '\n' {
 					strcpy(database, $3);
-					printf("\n");
 					createDB();
-					printf("\nSQL>");
 				}		        
 
 selectsql: 		SELECT '*' FROM tables ';' '\n'{
-					printf("\n");
 					selectWhere(NULL, $4, NULL);
 					printf("\n");
-					printf("SQL>");
 				}
 				| SELECT item_list FROM tables ';' '\n' {
-					printf("\n");
 					selectWhere($2, $4, NULL);
-					printf("\nSQL>");
 				}		
 				|SELECT '*' FROM tables WHERE conditions ';' '\n' {
-					printf("\n");
 					selectWhere(NULL, $4, $6);
-					printf("\nSQL>");
 				}
 				|SELECT item_list FROM tables WHERE conditions ';' '\n' { 
-					printf("\n");
 					selectWhere($2, $4, $6);
-					printf("\nSQL>");
 				}
 
 deletesql:		DELETE FROM ID ';' '\n' {
-					printf("\n");
 					deletes($3, NULL);
-					printf("\n");
-					printf("SQL>");
 				}
 
 				|DELETE FROM ID WHERE conditions ';' '\n' 	{ 
-					printf("\n");
 					deletes($3, $5);
-					printf("\nSQL>");
 				}
 
 
-insertsql:		INSERT INTO ID VALUES '(' value_list ')' ';' '\n' {
-					printf("\n");
+insertsql:		INSERT INTO ID VALUES '(' value_list ')' ';' '\n' {//sql插入语句
 					multiInsert($3, NULL, $6);
-					printf("\nSQL>");
 				}
 		
 				|INSERT INTO ID '(' item_list ')' VALUES '(' value_list ')' ';' '\n' {
-					printf("\n");
 					multiInsert($3, $5, $9);
-					printf("\nSQL>");
 				}
 
 
 updatesql:		UPDATE ID SET up_conds ';' '\n' {
-					printf("\n");
 					updates($2, $4, NULL);
-					printf("\nSQL>");
 				}
 		
 				|UPDATE ID SET up_conds WHERE conditions ';' '\n' {
-					printf("\n");
 					updates($2, $4, $6);
-					printf("\nSQL>");
 				}
 
 dropsql:		DROP TABLE ID ';' '\n'	{
-					printf("\n");
 					dropTable($3);
-					printf("\nSQL>");
 				}
 				| DROP DATABASE ID ';' '\n' {
-					printf("\n");
 					dropDB($3);
-					printf("\nSQL>");
 				}
 
 exitsql: 		EXIT ';' {
-					printf("\n");
 		            printf("exit with code 0!\n");
 		            exit(0);
 		        }

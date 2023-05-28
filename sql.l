@@ -65,6 +65,6 @@ USE						{ return USE; }
 [\'][A-Za-z][A-Za-z0-9_]*[\'] 		{ yylval.strval=strdup(yytext); return STRING; }
 [A-Za-z][A-Za-z0-9_]*	{ yylval.strval=strdup(yytext); return ID; }
 [0-9]+ 		{ yylval.intval=atoi(yytext); return NUMBER;	}			
-\n						return *yytext;
+"\n"						{return *yytext;}
 [ \t]+					/* ignore whitespace */
 %%
