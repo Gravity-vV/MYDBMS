@@ -1506,7 +1506,7 @@ yyreduce:
 
   case 33: /* create_items: ID INT  */
 #line 133 "sql.y"
-                       {
+                       {//该生成试返回一个结构体
 					(yyval.Citemsval) = (struct hyper_items_def *)malloc(sizeof(struct hyper_items_def));
                     (yyval.Citemsval)->field = (yyvsp[-1].strval);
                     (yyval.Citemsval)->type = 0;	
@@ -1536,7 +1536,7 @@ yyreduce:
 
   case 36: /* hyper_items: hyper_items ',' create_items  */
 #line 149 "sql.y"
-                                                               {
+                                                               {//创建一个属性链表，这里左递归，属性值逆序了
 					(yyval.Citemsval) = (yyvsp[0].Citemsval);
 					(yyval.Citemsval)->next = (yyvsp[-2].Citemsval);				
 				}
@@ -1564,7 +1564,7 @@ yyreduce:
 
   case 39: /* item_list: item_list ',' item  */
 #line 164 "sql.y"
-                                                    {
+                                                    {//产生一个只有字段组成的链表
 					(yyval.itemval) = (yyvsp[0].itemval);
 					(yyval.itemval)->next = (yyvsp[-2].itemval);
 				}
@@ -1603,7 +1603,7 @@ yyreduce:
 
   case 43: /* value_list: value_list ',' value  */
 #line 185 "sql.y"
-                                                       {
+                                                       {//值列表
 					(yyval.valueval) = (yyvsp[0].valueval);
 					(yyval.valueval)->next = (yyvsp[-2].valueval);
 				}

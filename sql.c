@@ -69,6 +69,17 @@ void freeTables(struct table_def *tableroot)
 	}
 }
 
+void freeTable(struct table *tableroot)
+{
+	struct table *tableptr;
+	while (tableroot != NULL)
+	{
+		tableptr = tableroot->next;
+		free(tableroot);
+		tableroot = tableptr;
+	}
+}
+
 void freeUpcon(struct upcon_def *uproot)
 {
 	struct upcon_def *uptemp;
@@ -516,7 +527,16 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 	}
 }
 
-/*查询操作，目前仅支持最多2个表查询。itemroot是选择的字段链表根节点，若为*即全选则传入NULL，tableroot是选择的表根节点，
+void printtable(struct table *tabletemp)
+{
+	for (int j = 0; j < tabletemp->flen; j++)
+	{
+		printf("%-20s  ", tabletemp->ffield[j].name);
+	}
+	printf("\n");
+}
+
+/*查询操作，目前仅支持多个表查询。itemroot是选择的字段链表根节点，若为*即全选则传入NULL，tableroot是选择的表根节点，
 conroot是条件二叉树根节点，若无条件则传入NULL，首先找到查询的表，找到以后更新每个table_def结构的pos变量，指向对应的表，
 然后判断是否是单表，若为单表，tabletemp指向该表，再判断itemroot是否为空，若为空表示全选，依次将整个表打印出来，
 提示成功，返回。若不为单表，即为2个表联合查询，那么先遍历两个表，找到第一组名称相同且数据类型相同的字段，作为主码，
@@ -528,7 +548,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 	struct table_def *tableptr = NULL;
 	struct table *tabletemp = NULL;
 	struct item_def *itemtemp = NULL;
-	int i, j, k, m, n, len1, len2, pk1 = -1, pk2 = -1;
+	int i, j, k, m, n, len1, len2;
 	itemroot = converseItems(itemroot);
 	if (dbroot != NULL)
 		dbtemp = dbroot;
@@ -598,120 +618,177 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 			}
 			else // 多表链接
 			{
-				tableroot->next->next = tableroot;						  // 双向链表
-				tableroot = tableroot->next;							  // 移向下一个表
-				tableroot->next->next = NULL;							  // 逆序
-				len1 = tableroot->pos->flen;							  // 第一个表属性的个数
-				len2 = tableroot->next->pos->flen;						  // 第二个表属性的个数
-				tabletemp = (struct table *)malloc(sizeof(struct table)); // 新建了一个临时表
-				for (i = len1 - 1; i >= 0; i--)
+				struct table_def *pCurNode = tableroot;
+				struct table_def *pPrevNode = NULL;
+				struct table_def *pTmpNode = NULL;
+				while (pCurNode)
 				{
-					for (j = len2 - 1; j >= 0; j--)
-					{
-						if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && tableroot->pos->ffield[i].type == tableroot->next->pos->ffield[j].type) // 两个表的名字一致，类型一致
-						{
-							pk1 = i; // 记录两个表中重复列的坐标
-							pk2 = j;
-							break;
-						}
-					}
-					if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && tableroot->pos->ffield[i].type == tableroot->next->pos->ffield[j].type)
-						break;
+					pPrevNode = pCurNode;
+					pCurNode = pCurNode->next;
+					pPrevNode->next = pTmpNode;
+					pTmpNode = pPrevNode;
 				}
-				if (pk2 == -1) // 没有相同字段，笛卡尔积
+				tableroot = pTmpNode;		  // 原地反转链表
+				int fn = pTmpNode->pos->flen; // 第一个表属性的个数
+				while (tableroot->next != NULL)
 				{
-					tabletemp->ffield = (struct field *)malloc((len1 + len2) * sizeof(struct field));
-					tabletemp->flen = len1 + len2;
-					k = 0;
-					for (i = len1 - 1; i >= 0; i--) // 把表头复制进去
-					{
-						strcpy(tabletemp->ffield[k].name, tableroot->pos->ffield[i].name);
-						k++;
-					}
-					for (i = len2 - 1; i >= 0; i--)
-					{
-						strcpy(tabletemp->ffield[k].name, tableroot->next->pos->ffield[i].name);
-						k++;
-					}
-					n = 0;
-					for (i = 0; i < tableroot->pos->ilen; i++) // 把数据复制进去
-					{
-						for (j = 0; j < tableroot->next->pos->ilen; j++)
-						{
-							k = 0;
-							for (m = len1 - 1; m >= 0; m--)
-							{
-								tabletemp->ffield[k].type = tableroot->pos->ffield[m].type;
-								if (tableroot->pos->ffield[m].type == 0)
-									tabletemp->ffield[k].key[n].intkey = tableroot->pos->ffield[m].key[i].intkey;
-								else
-									strcpy(tabletemp->ffield[k].key[n].skey, tableroot->pos->ffield[m].key[i].skey);
-								k++;
-							}
-							for (m = len2 - 1; m >= 0; m--)
-							{
-								tabletemp->ffield[k].type = tableroot->next->pos->ffield[m].type;
-								if (tableroot->next->pos->ffield[m].type == 0)
-									tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
-								else
-									strcpy(tabletemp->ffield[k].key[n].skey, tableroot->next->pos->ffield[m].key[j].skey);
-								k++;
-							}
-							n++;
-						}
-					}
-					tabletemp->ilen = n;
-				}
-				else // 有相同的列，自然连接
-				{
-					tabletemp->ffield = (struct field *)malloc((len1 + len2 - 1) * sizeof(struct field));
-					tabletemp->flen = len1 + len2 - 1;
-					k = 0;
+					int pk1 = -1, pk2 = -1;
+					len1 = fn;
+					len2 = tableroot->next->pos->flen; // 第二个表属性的个数
 					for (i = len1 - 1; i >= 0; i--)
 					{
-						strcpy(tabletemp->ffield[k].name, tableroot->pos->ffield[i].name);
-						k++;
-					}
-					for (i = len2 - 1; i >= 0; i--)
-					{
-						if (i == pk2)
-							continue;
-						strcpy(tabletemp->ffield[k].name, tableroot->next->pos->ffield[i].name);
-						k++;
-					}
-					n = 0;
-					for (i = 0; i < tableroot->pos->ilen; i++)
-					{
-						for (j = 0; j < tableroot->next->pos->ilen; j++)
+						for (j = len2 - 1; j >= 0; j--)
 						{
-							if (tableroot->pos->ffield[pk1].type == 0 && tableroot->pos->ffield[pk1].key[i].intkey == tableroot->next->pos->ffield[pk2].key[j].intkey || tableroot->pos->ffield[pk1].type == 1 && strcmp(tableroot->pos->ffield[pk1].key[i].skey, tableroot->next->pos->ffield[pk2].key[j].skey) == 0)
+							if (strcmp(pTmpNode->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && pTmpNode->pos->ffield[i].type == tableroot->next->pos->ffield[j].type) // 两个表的名字一致，类型一致
+							{
+								pk1 = i; // 记录两个表中重复列的坐标
+								pk2 = j;
+								break;
+							}
+						}
+						if (strcmp(pTmpNode->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && pTmpNode->pos->ffield[i].type == tableroot->next->pos->ffield[j].type)
+							break;
+					}
+					if (pk2 == -1) // 没有相同字段，笛卡尔积
+					{
+						tabletemp = (struct table *)malloc(sizeof(struct table)); // 新建了一个临时表
+						tabletemp->ffield = (struct field *)malloc((len1 + len2) * sizeof(struct field));
+						tabletemp->flen = len1 + len2;
+						k = 0;
+						for (i = len1 - 1; i >= 0; i--) // 把表头复制进去
+						{
+							strcpy(tabletemp->ffield[k].name, pTmpNode->pos->ffield[i].name);
+							k++;
+						}
+						for (i = len2 - 1; i >= 0; i--)
+						{
+							strcpy(tabletemp->ffield[k].name, tableroot->next->pos->ffield[i].name);
+							k++;
+						}
+						n = 0;
+						for (i = 0; i < pTmpNode->pos->ilen; i++) // 把数据复制进去
+						{
+							for (j = 0; j < tableroot->next->pos->ilen; j++)
 							{
 								k = 0;
 								for (m = len1 - 1; m >= 0; m--)
 								{
-									tabletemp->ffield[k].type = tableroot->pos->ffield[m].type;
-									if (tableroot->pos->ffield[m].type == 0)
-										tabletemp->ffield[k].key[n].intkey = tableroot->pos->ffield[m].key[i].intkey;
+									tabletemp->ffield[k].type = pTmpNode->pos->ffield[m].type;
+									if (pTmpNode->pos->ffield[m].type == 0)
+									{
+										tabletemp->ffield[k].key[n].intkey = pTmpNode->pos->ffield[m].key[i].intkey;
+										tabletemp->ffield[k].type = 0;
+									}
 									else
-										strcpy(tabletemp->ffield[k].key[n].skey, tableroot->pos->ffield[m].key[i].skey);
+									{
+										strcpy(tabletemp->ffield[k].key[n].skey, pTmpNode->pos->ffield[m].key[i].skey);
+										tabletemp->ffield[k].type = 1;
+									}
 									k++;
 								}
 								for (m = len2 - 1; m >= 0; m--)
 								{
-									if (m == pk2)
-										continue;
 									tabletemp->ffield[k].type = tableroot->next->pos->ffield[m].type;
 									if (tableroot->next->pos->ffield[m].type == 0)
+									{
 										tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
+										tabletemp->ffield[k].type = 0;
+									}
 									else
+									{
 										strcpy(tabletemp->ffield[k].key[n].skey, tableroot->next->pos->ffield[m].key[j].skey);
+										tabletemp->ffield[k].type = 1;
+									}
 									k++;
 								}
 								n++;
 							}
 						}
+						tabletemp->ilen = n;
 					}
-					tabletemp->ilen = n; // 数据总量达到n=item1*item2
+					else // 有相同的列，自然连接
+					{
+						tabletemp = (struct table *)malloc(sizeof(struct table)); // 新建了一个临时表
+						tabletemp->ffield = (struct field *)malloc((len1 + len2 - 1) * sizeof(struct field));
+						tabletemp->flen = len1 + len2 - 1;
+						k = 0;
+						for (i = len1 - 1; i >= 0; i--)
+						{
+							strcpy(tabletemp->ffield[k].name, pTmpNode->pos->ffield[i].name);
+							k++;
+						}
+						for (i = len2 - 1; i >= 0; i--)
+						{
+							if (i == pk2)
+								continue;
+							strcpy(tabletemp->ffield[k].name, tableroot->next->pos->ffield[i].name);
+							k++;
+						}
+						n = 0;
+						for (i = 0; i < pTmpNode->pos->ilen; i++)
+						{
+							for (j = 0; j < tableroot->next->pos->ilen; j++)
+							{
+								if (pTmpNode->pos->ffield[pk1].type == 0 && pTmpNode->pos->ffield[pk1].key[i].intkey == tableroot->next->pos->ffield[pk2].key[j].intkey || pTmpNode->pos->ffield[pk1].type == 1 && strcmp(pTmpNode->pos->ffield[pk1].key[i].skey, tableroot->next->pos->ffield[pk2].key[j].skey) == 0)
+								{
+									k = 0;
+									for (m = len1 - 1; m >= 0; m--)
+									{
+										tabletemp->ffield[k].type = pTmpNode->pos->ffield[m].type;
+										if (pTmpNode->pos->ffield[m].type == 0)
+										{
+											tabletemp->ffield[k].key[n].intkey = pTmpNode->pos->ffield[m].key[i].intkey;
+											tabletemp->ffield[k].type = 0;
+										}
+										else
+										{
+											strcpy(tabletemp->ffield[k].key[n].skey, pTmpNode->pos->ffield[m].key[i].skey);
+											tabletemp->ffield[k].type = 1;
+										}
+										k++;
+									}
+									for (m = len2 - 1; m >= 0; m--)
+									{
+										if (m == pk2)
+											continue;
+										tabletemp->ffield[k].type = tableroot->next->pos->ffield[m].type;
+										if (tableroot->next->pos->ffield[m].type == 0)
+										{
+											tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
+											tabletemp->ffield[k].type = 0;
+										}
+
+										else
+										{
+											strcpy(tabletemp->ffield[k].key[n].skey, tableroot->next->pos->ffield[m].key[j].skey);
+											tabletemp->ffield[k].type = 1;
+										}
+										k++;
+									}
+									n++;
+								}
+							}
+						}
+						tabletemp->ilen = n; // 数据总量达到n=item1*item2
+					}
+					fn = tabletemp->flen;
+					if (pTmpNode != tableroot)
+					{
+						freeTable(pTmpNode->pos); // 释放当前大表
+						struct table_def *tp = tableroot;
+						tableroot = tableroot->next;
+						free(tp);
+						tp = NULL;
+					}
+					else
+					{
+						struct table_def *tp = tableroot;
+						tableroot = tableroot->next;
+						free(tp);
+						tp = NULL;
+					}
+					pTmpNode->pos = tabletemp; // 获取新的大表
+											   // printtable(pTmpNode->pos);
 				}
 			}
 			itemtemp = itemroot; // 需要保留的字段
