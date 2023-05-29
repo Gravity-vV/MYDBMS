@@ -1383,7 +1383,7 @@ yyreduce:
 
   case 18: /* createsql: CREATE TABLE ID '(' hyper_items ')' ';' '\n'  */
 #line 72 "sql.y"
-                                                                     {
+                                                                     {//sql创建语句
                 	createTable((yyvsp[-5].strval), (yyvsp[-3].Citemsval));
 				}
 #line 1390 "y.tab.c"
@@ -1449,7 +1449,7 @@ yyreduce:
 
   case 26: /* insertsql: INSERT INTO ID VALUES '(' value_list ')' ';' '\n'  */
 #line 104 "sql.y"
-                                                                          {
+                                                                          {//sql插入语句
 					multiInsert((yyvsp[-6].strval), NULL, (yyvsp[-3].valueval));
 				}
 #line 1456 "y.tab.c"

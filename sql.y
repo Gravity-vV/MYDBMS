@@ -130,7 +130,7 @@ exitsql: 		EXIT ';' {
 		            exit(0);
 		        }
 
-create_items:	ID INT {
+create_items:	ID INT {//该生成试返回一个结构体
 					$$ = (struct hyper_items_def *)malloc(sizeof(struct hyper_items_def));
                     $$->field = $1;
                     $$->type = 0;	
@@ -146,7 +146,7 @@ create_items:	ID INT {
 hyper_items: 	create_items {
 					$$ = $1;
 				}
-				| hyper_items ',' create_items {
+				| hyper_items ',' create_items {//创建一个属性链表，这里左递归，属性值逆序了
 					$$ = $3;
 					$$->next = $1;				
 				}
@@ -161,7 +161,7 @@ item: 			ID {
 item_list: 		item {
 					$$ = $1;				
 				}
-				| item_list ',' item{
+				| item_list ',' item{//产生一个只有字段组成的链表
 					$$ = $3;
 					$$->next = $1;
 				}
@@ -182,12 +182,12 @@ value:			NUMBER {
 value_list:		value {
 					$$ = $1;
 				}
-				| value_list ',' value {
+				| value_list ',' value {//值列表
 					$$ = $3;
 					$$->next = $1;
 				}
 
-comparator:		'=' {$$ = 1; }
+comparator:		'=' {$$ = 1; }//终结符
 				| '>' {$$ = 2; }
 				| '<' {$$ = 3; }
 				| ">=" {$$ = 4; }

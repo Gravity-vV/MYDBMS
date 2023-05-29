@@ -325,13 +325,20 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 				if (strcmp(tabletemp->name, tableval) == 0) // 找到表
 				{
 					i = 0;
-					temp = tabletemp->ilen;
-					valtemp = valroot;
-					if (itemroot == NULL)
+					temp = tabletemp->ilen; // 得到行数
+					valtemp = valroot;		// 得到值列表
+					if (itemroot == NULL)	// 默认的插入语句，没有属性名
 					{
-						while (valtemp != NULL)
+						while (valtemp != NULL) // 遍历值列表
 						{
-							if (valtemp->type == 0)
+							if (valtemp->type != tabletemp->ffield[i].type)
+							{
+								printf("error: Type mismatch!\n...\nSQL>");
+								freeItems(itemroot);
+								freeVal(valroot);
+								return;
+							}
+							if (valtemp->type == 0) // 如果为整形就把整形数值附近去，反之赋值字符串类型，注意这里是运用了union
 							{
 								tabletemp->ffield[i].type = 0;
 								tabletemp->ffield[i].key[temp].intkey = valtemp->value.intkey;
@@ -341,19 +348,26 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 								tabletemp->ffield[i].type = 1;
 								strcpy(tabletemp->ffield[i].key[temp].skey, valtemp->value.skey);
 							}
-							i++;
+							i++; // 记录目前加了几个属性
 							valtemp = valtemp->next;
 						}
 					}
-					else
+					else // 有列表的
 					{
 						itemtemp = itemroot;
 						while (itemtemp != NULL && valtemp != NULL)
 						{
 							for (j = 0; j < tabletemp->flen; j++)
 							{
-								if (strcmp(tabletemp->ffield[j].name, itemtemp->field) == 0)
+								if (strcmp(tabletemp->ffield[j].name, itemtemp->field) == 0) // 找到了这个字段
 								{
+									if (valtemp->type != tabletemp->ffield[j].type)
+									{
+										printf("error: Type mismatch!\n...\nSQL>");
+										freeItems(itemroot);
+										freeVal(valroot);
+										return;
+									}
 									if (valtemp->type == 0)
 									{
 										tabletemp->ffield[j].type = 0;
@@ -364,24 +378,24 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 										tabletemp->ffield[j].type = 1;
 										strcpy(tabletemp->ffield[j].key[temp].skey, valtemp->value.skey);
 									}
-									i++;
+									i++; // 记录插入了几个值
 									break;
 								}
 							}
-							if (j == tabletemp->flen)
+							if (j == tabletemp->flen) // j走到最后一个也没找完，前面的如果能赋值上还是会赋值上的
 							{
 								printf("error: Column name does not match the table definition!\n...\nSQL>");
 								freeItems(itemroot);
 								freeVal(valroot);
 								return;
 							}
-							itemtemp = itemtemp->next;
+							itemtemp = itemtemp->next; // 找下一个传过来的字段
 							valtemp = valtemp->next;
 						}
 					}
-					if (i <= tabletemp->flen && itemtemp == NULL && valtemp == NULL)
+					if (i <= tabletemp->flen && itemtemp == NULL && valtemp == NULL) // 数量是否匹配的判定
 					{
-						temp++;
+						temp++; // 行数加一
 						tabletemp->ilen = temp;
 						printf("Insert successfully!\n...\nSQL>");
 					}
@@ -528,17 +542,17 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 	}
 	while (dbtemp != NULL)
 	{
-		if (strcmp(dbtemp->name, database) == 0)
+		if (strcmp(dbtemp->name, database) == 0) // 找到数据库
 		{
 			tableptr = tableroot;
 			while (tableptr != NULL)
 			{
-				tabletemp = dbtemp->tbroot;
+				tabletemp = dbtemp->tbroot; // 内存中的表的地址
 				while (tabletemp != NULL)
 				{
 					if (strcmp(tabletemp->name, tableptr->table) == 0)
 					{
-						tableptr->pos = tabletemp;
+						tableptr->pos = tabletemp; // 请求表列表的指针指向内存中表的地址
 						break;
 					}
 					tabletemp = tabletemp->next;
@@ -553,17 +567,17 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 				}
 				tableptr = tableptr->next;
 			}
-			if (tableroot->next == NULL)
+			if (tableroot->next == NULL) // 如果是单表
 			{
-				tabletemp = tableroot->pos;
-				if (itemroot == NULL)
+				tabletemp = tableroot->pos; // 找到想要请求的这个表
+				if (itemroot == NULL)		// 选中所有列，全部打印
 				{
-					for (j = tabletemp->flen - 1; j >= 0; j--)
+					for (j = tabletemp->flen - 1; j >= 0; j--) // 语句传值的时候是逆序传值 插入的时候是正序的 因此最后是逆序
 					{
-						printf("%-20s  ", tabletemp->ffield[j].name);
+						printf("%-20s  ", tabletemp->ffield[j].name); // 打印表头
 					}
 					printf("\n");
-					for (i = 0; i < tabletemp->ilen; i++)
+					for (i = 0; i < tabletemp->ilen; i++) // 按行打印表中数据
 					{
 						if (whereTF(i, tabletemp, conroot) == TRUE)
 						{
@@ -582,34 +596,34 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 					return;
 				}
 			}
-			else
+			else // 多表链接
 			{
-				tableroot->next->next = tableroot;
-				tableroot = tableroot->next;
-				tableroot->next->next = NULL;
-				len1 = tableroot->pos->flen;
-				len2 = tableroot->next->pos->flen;
-				tabletemp = (struct table *)malloc(sizeof(struct table));
+				tableroot->next->next = tableroot;						  // 双向链表
+				tableroot = tableroot->next;							  // 移向下一个表
+				tableroot->next->next = NULL;							  // 逆序
+				len1 = tableroot->pos->flen;							  // 第一个表属性的个数
+				len2 = tableroot->next->pos->flen;						  // 第二个表属性的个数
+				tabletemp = (struct table *)malloc(sizeof(struct table)); // 新建了一个临时表
 				for (i = len1 - 1; i >= 0; i--)
 				{
 					for (j = len2 - 1; j >= 0; j--)
 					{
-						if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && tableroot->pos->ffield[i].type == tableroot->next->pos->ffield[j].type)
+						if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && tableroot->pos->ffield[i].type == tableroot->next->pos->ffield[j].type) // 两个表的名字一致，类型一致
 						{
-							pk1 = i;
+							pk1 = i; // 记录两个表中重复列的坐标
 							pk2 = j;
 							break;
 						}
 					}
-					if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0)
+					if (strcmp(tableroot->pos->ffield[i].name, tableroot->next->pos->ffield[j].name) == 0 && tableroot->pos->ffield[i].type == tableroot->next->pos->ffield[j].type)
 						break;
 				}
-				if (pk2 == -1)
+				if (pk2 == -1) // 没有相同字段，笛卡尔积
 				{
 					tabletemp->ffield = (struct field *)malloc((len1 + len2) * sizeof(struct field));
 					tabletemp->flen = len1 + len2;
 					k = 0;
-					for (i = len1 - 1; i >= 0; i--)
+					for (i = len1 - 1; i >= 0; i--) // 把表头复制进去
 					{
 						strcpy(tabletemp->ffield[k].name, tableroot->pos->ffield[i].name);
 						k++;
@@ -620,7 +634,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 						k++;
 					}
 					n = 0;
-					for (i = 0; i < tableroot->pos->ilen; i++)
+					for (i = 0; i < tableroot->pos->ilen; i++) // 把数据复制进去
 					{
 						for (j = 0; j < tableroot->next->pos->ilen; j++)
 						{
@@ -648,7 +662,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 					}
 					tabletemp->ilen = n;
 				}
-				else
+				else // 有相同的列，自然连接
 				{
 					tabletemp->ffield = (struct field *)malloc((len1 + len2 - 1) * sizeof(struct field));
 					tabletemp->flen = len1 + len2 - 1;
@@ -697,17 +711,17 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 							}
 						}
 					}
-					tabletemp->ilen = n;
+					tabletemp->ilen = n; // 数据总量达到n=item1*item2
 				}
 			}
-			itemtemp = itemroot;
+			itemtemp = itemroot; // 需要保留的字段
 			while (itemtemp != NULL)
 			{
-				for (i = 0; i < tabletemp->flen; i++)
+				for (i = 0; i < tabletemp->flen; i++) // 遍历大表的字段
 				{
 					if (strcmp(itemtemp->field, tabletemp->ffield[i].name) == 0)
 					{
-						itemtemp->pos = &tabletemp->ffield[i];
+						itemtemp->pos = &tabletemp->ffield[i]; // 相等就填
 						break;
 					}
 				}
@@ -721,7 +735,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 				}
 				itemtemp = itemtemp->next;
 			}
-			if (itemroot == NULL)
+			if (itemroot == NULL) // 全部打印
 			{
 				for (j = 0; j < tabletemp->flen; j++)
 				{
@@ -729,7 +743,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 				}
 				printf("\n");
 			}
-			else
+			else // 按大表打印
 			{
 				itemtemp = itemroot;
 				while (itemtemp != NULL)
@@ -739,7 +753,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 				}
 				printf("\n");
 			}
-			for (i = 0; i < tabletemp->ilen; i++)
+			for (i = 0; i < tabletemp->ilen; i++) // 按where筛选
 			{
 				if (whereTF(i, tabletemp, conroot) == TRUE)
 				{
@@ -774,7 +788,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 			freeTables(tableroot);
 			return;
 		}
-		dbtemp = dbtemp->next;
+		dbtemp = dbtemp->next; // 找下一个数据库
 	}
 	freeCons(conroot);
 	freeItems(itemroot);
