@@ -1,6 +1,8 @@
 # myDBMS
-## 声明 :  
-star和fork我这个项目的同学应该都是西电王小兵老师的编译原理课的学生。如果这个大作业没有改要求的话，我这个项目本身是可以通过检查的。但是我不鼓励大家直接照抄，sql.c和.h文件里的中文注释都写挺详细的，建议还是看看搞懂了自己写一下，一般来说不会花很长时间，.h和.c全部自己重写的话两三天差不多能做完。也可以试试在这个基础上改成非内存数据库，用文件存储和读取数据，也可以加上四则运算等更高级的sql语法支持，总之最好别直接抄。
+## 新的功能  
+- 将bash的界面做了调整，支持连续读入sql语句
+- 添加了double类型，支持对double类型的比较，插入，修改
+- 将两表链接查询扩展至多表链接查询
 ## for run :  
   RE:  
   WSL(Ubuntu 16.04)  
@@ -94,10 +96,10 @@ EXIT;
 CREATE DATABASE XJGL;
 CREATE TABLE STUDENT(SNAME CHAR(20),SAGE INT,SSEX INT);  
 CREATE TABLE COURSE(CNAME CHAR(20),CID INT);  
-CREATE TABLE CS(SNAME CHAR(20),CID INT);  
+CREATE TABLE CS(SNAME CHAR(20),CID INT,GRADE DOUBLE);  
 INSERT INTO STUDENT VALUES ('LISI',23,0);  
 INSERT INTO COURSE(CNAME,CID) VALUES ('DB',1);  
-INSERT INTO CS VALUES ('LISI',1); 
+INSERT INTO CS VALUES ('LISI',1,89.9); 
 SELECT * FROM CS;
 SELECT * FROM COURSE;  
 SELECT * FROM STUDENT;  

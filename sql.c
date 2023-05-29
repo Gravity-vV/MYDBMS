@@ -802,7 +802,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 											tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
 											tabletemp->ffield[k].type = 0;
 										}
-										if (tableroot->next->pos->ffield[m].type == 1)
+										else if (tableroot->next->pos->ffield[m].type == 1)
 										{
 											tabletemp->ffield[k].key[n].dkey = tableroot->next->pos->ffield[m].key[j].dkey;
 											tabletemp->ffield[k].type = 1;
