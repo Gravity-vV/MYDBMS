@@ -1,16 +1,20 @@
 # myDBMS
-## 新的功能  
+## New features  
 - 将bash的界面做了调整，支持连续读入sql语句
 - 添加了double类型，支持对double类型的比较，插入，修改
 - 将两表链接查询扩展至多表链接查询
+- 添加了批处理文件runsql.sh
 ## for run :  
   RE:  
-  WSL(Ubuntu 16.04)  
+  WSL:
+  - Distributor ID: Ubuntu
+  - Description:    Ubuntu 22.04.1 LTS
+  - Release:        22.04
+  - Codename:       jammy  
+  
   command:  
-  flex sql.l  
-  yacc -d sql.y  
-  gcc sql.c lex.yy.c y.tab.c -o mysql  
-  ./mysql  
+  cd MYDBMS  
+  ./runsql.sh  
 
 ## for test :  
 
@@ -92,7 +96,8 @@ SHOW DATABASES;
 //正常退出  
 EXIT;  
 
-//多表
+//多表链接查询（超过两个表）
+
 CREATE DATABASE XJGL;
 CREATE TABLE STUDENT(SNAME CHAR(20),SAGE INT,SSEX INT);  
 CREATE TABLE COURSE(CNAME CHAR(20),CID INT);  
@@ -103,13 +108,11 @@ INSERT INTO CS VALUES ('LISI',1,89.9);
 SELECT * FROM CS;
 SELECT * FROM COURSE;  
 SELECT * FROM STUDENT;  
-
 SELECT * FROM STUDENT,CS,COURSE WHERE (SSEX=0) AND (CID=1); 
-
 SELECT * FROM STUDENT,CS WHERE (SSEX=0) AND (CID=1);
 
 
-//浮点
+//测试浮点数
 CREATE DATABASE XJGL;
 CREATE TABLE CS(SNAME CHAR(20),CID INT,GRADE DOUBLE);
 INSERT INTO CS VALUES ('LISI',1,89.9);
