@@ -45,6 +45,8 @@ int |
 INT   					{ return INT; } 
 char |
 CHAR 					{ return CHAR; }  
+double |
+DOUBLE					{ return DOUBLE; }  
 show |
 SHOW					{ return SHOW; } 
 exit |
@@ -64,6 +66,7 @@ USE						{ return USE; }
 [=]						return *yytext;
 [\'][A-Za-z][A-Za-z0-9_]*[\'] 		{ yylval.strval=strdup(yytext); return STRING; }
 [A-Za-z][A-Za-z0-9_]*	{ yylval.strval=strdup(yytext); return ID; }
+[0-9]+\.[0-9]+ {yylval.dval=atof(yytext); return DOUBLEN;}
 [0-9]+ 		{ yylval.intval=atoi(yytext); return NUMBER;	}			
 "\n"						{return *yytext;}
 [ \t]+					/* ignore whitespace */

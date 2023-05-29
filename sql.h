@@ -9,78 +9,83 @@
 #include <string.h>
 #include <fcntl.h>
 
-typedef union KEY{
+typedef union KEY
+{
 	int intkey;
+	double dkey;
 	char skey[64];
-}KEY;
+} KEY;
 
-typedef struct field{	/*field structure 字段结构体*/
-    char name[64];		/*字段名*/
-    int type;			/*INT:0  STRING:1*/
-    union KEY key[100];		/*key 键值*/
-}field;
+typedef struct field
+{						/*field structure 字段结构体*/
+	char name[64];		/*字段名*/
+	int type;			/*INT:0  DOUBLE:1  STRING:2*/
+	union KEY key[100]; /*key 键值*/
+} field;
 
-typedef struct table{	/*table structure 表结构体*/
-    char name[64];			/*表名*/
-    struct field *ffield;	/*fields 字段数组指针*/
-    int flen;			/*fields length 字段数目*/
-    int ilen;			/*items length 记录条数*/
-    struct table *next;
-}table;
+typedef struct table
+{						  /*table structure 表结构体*/
+	char name[64];		  /*表名*/
+	struct field *ffield; /*fields 字段数组指针*/
+	int flen;			  /*fields length 字段数目*/
+	int ilen;			  /*items length 记录条数*/
+	struct table *next;
+} table;
 
-typedef struct mydb{	/*database structure 数据库结构体*/
-    char name[64];		/*数据库名称*/
-    struct table *tbroot;	/*table root 下属表链表的根节点*/
-    struct mydb *next;
-}mydb;
+typedef struct mydb
+{						  /*database structure 数据库结构体*/
+	char name[64];		  /*数据库名称*/
+	struct table *tbroot; /*table root 下属表链表的根节点*/
+	struct mydb *next;
+} mydb;
 
-typedef struct hyper_items_def		/*CREATE语句后的字段和类型链表节点结构*/
+typedef struct hyper_items_def /*CREATE语句后的字段和类型链表节点结构*/
 {
-	char *field;		/*字段名称*/
-	int type;			/*INT:0  STRING:1*/
-	struct  hyper_items_def *next;
-}hyper_items_def;
+	char *field; /*字段名称*/
+	int type;	 /*INT:0  DOUBLE:1  STRING:2*/
+	struct hyper_items_def *next;
+} hyper_items_def;
 
-typedef struct value_def	/*INSERT语句的键值链表节点结构，包括值和类型*/
+typedef struct value_def /*INSERT语句的键值链表节点结构，包括值和类型*/
 {
-	union KEY value;	/*值*/
-	int type;		/*类型，INT:0  STRING:1*/
+	union KEY value; /*值*/
+	int type;		 /*类型，INT:0  DOUBLE:1  STRING:2*/
 	struct value_def *next;
-}value_def;
+} value_def;
 
-typedef struct item_def 	/*INSERT，SELECT语句的选择字段链表节点结构，包括字段名，字段位置指针*/
+typedef struct item_def /*INSERT，SELECT语句的选择字段链表节点结构，包括字段名，字段位置指针*/
 {
-	char *field;	/*字段名*/
-	struct field *pos;	/*字段在实际数据库中的位置指针*/
+	char *field;	   /*字段名*/
+	struct field *pos; /*字段在实际数据库中的位置指针*/
 	struct item_def *next;
-}field_def;
+} field_def;
 
-typedef struct conditions_def	/*SELECT,UPDATE,DELETE语句的条件二叉树节点结构*/
+typedef struct conditions_def /*SELECT,UPDATE,DELETE语句的条件二叉树节点结构*/
 {
-	int type; /*键值类型，INT:0  STRING:1*/	
-	struct item_def *litem;		/*条件表达式左部的字段指针*/
-	int intv;		/*整型键值存储处*/
-	char *strv;		/*字符串键值*/
-	int cmp_op;		/*操作符类型, '=':1 | '>':2 | '<':3 | '>=':4 | '<=':5 | '!=':6 | 'AND':7 | 'OR':8 */
-	struct conditions_def *left;	/*左子树指针*/
-	struct conditions_def *right;	/*右子树指针*/
-}conditions_def;
+	int type;					  /*键值类型，INT:0  STRING:1*/
+	struct item_def *litem;		  /*条件表达式左部的字段指针*/
+	int intv;					  /*整型键值存储处*/
+	char *strv;					  /*字符串键值*/
+	int cmp_op;					  /*操作符类型, '=':1 | '>':2 | '<':3 | '>=':4 | '<=':5 | '!=':6 | 'AND':7 | 'OR':8 */
+	struct conditions_def *left;  /*左子树指针*/
+	struct conditions_def *right; /*右子树指针*/
+} conditions_def;
 
-typedef struct table_def	/*多表SELECT语句的表链表节点结构*/
+typedef struct table_def /*多表SELECT语句的表链表节点结构*/
 {
-	char *table;	/*表名*/
-	struct table *pos;		/*表在实际数据库中的位置指针*/
+	char *table;	   /*表名*/
+	struct table *pos; /*表在实际数据库中的位置指针*/
 	struct table_def *next;
-}table_def;
+} table_def;
 
-typedef struct upcon_def	/*UPDATE语句的赋值链表节点结构*/
+typedef struct upcon_def /*UPDATE语句的赋值链表节点结构*/
 {
-	char *field;	/*字段名*/
-	int type;		/*类型，INT:0  STRING:1*/
-	union KEY value;	/*值*/
-	struct field *pos;		/*字段在实际数据库中的位置指针*/
+	char *field;	   /*字段名*/
+	int type;		   /*类型，INT:0  DOUBLE:1  STRING:2*/
+	union KEY value;   /*值*/
+	struct field *pos; /*字段在实际数据库中的位置指针*/
 	struct upcon_def *next;
-}upcon_def;
+} upcon_def;
 
 void createDB();
 void showDB();

@@ -78,7 +78,9 @@ extern int yydebug;
     STRING = 279,                  /* STRING  */
     ID = 280,                      /* ID  */
     INT = 281,                     /* INT  */
-    CHAR = 282                     /* CHAR  */
+    CHAR = 282,                    /* CHAR  */
+    DOUBLE = 283,                  /* DOUBLE  */
+    DOUBLEN = 284                  /* DOUBLEN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -112,6 +114,8 @@ extern int yydebug;
 #define ID 280
 #define INT 281
 #define CHAR 282
+#define DOUBLE 283
+#define DOUBLEN 284
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -120,6 +124,7 @@ union YYSTYPE
 #line 27 "sql.y"
   
 	int intval;   
+	double dval;
   	char *strval;
   	struct hyper_items_def *Citemsval;
   	struct value_def *valueval;
@@ -128,7 +133,7 @@ union YYSTYPE
   	struct table_def *tbval;
   	struct upcon_def *updateval;
 
-#line 132 "y.tab.h"
+#line 137 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

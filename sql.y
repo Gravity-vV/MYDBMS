@@ -26,6 +26,7 @@ int main()
 
 %union{  
 	int intval;   
+	double dval;
   	char *strval;
   	struct hyper_items_def *Citemsval;
   	struct value_def *valueval;
@@ -37,7 +38,8 @@ int main()
 
 %token SELECT FROM WHERE AND OR DROP DELETE TABLE CREATE INTO VALUES INSERT UPDATE SET SHOW DATABASE DATABASES TABLES EXIT USE
 %token <intval> NUMBER 
-%token <strval> STRING ID INT CHAR
+%token <strval> STRING ID INT CHAR DOUBLE
+%token <dval> DOUBLEN
 %type <intval> comparator
 %type <Citemsval> hyper_items create_items
 %type <valueval> value_list value
@@ -136,12 +138,19 @@ create_items:	ID INT {//该生成试返回一个结构体
                     $$->type = 0;	
                     $$->next = NULL;	
 				}
-				| ID CHAR '(' NUMBER ')'{
+				| ID DOUBLE {
 					$$ = (struct hyper_items_def *)malloc(sizeof(struct hyper_items_def));
                     $$->field = $1;
                     $$->type = 1;
                     $$->next = NULL;	
 				}
+				| ID CHAR '(' NUMBER ')'{
+					$$ = (struct hyper_items_def *)malloc(sizeof(struct hyper_items_def));
+                    $$->field = $1;
+                    $$->type = 2;
+                    $$->next = NULL;	
+				}
+				
 
 hyper_items: 	create_items {
 					$$ = $1;
@@ -172,10 +181,16 @@ value:			NUMBER {
 					$$->type = 0;
 					$$->next = NULL;
 				}
+				| DOUBLEN {
+					$$ = ((struct value_def *)malloc(sizeof(struct value_def)));
+					$$->value.dkey = $1;
+					$$->type = 1;
+					$$->next = NULL;
+				}
 				| STRING {
 					$$ = ((struct value_def *)malloc(sizeof(struct value_def)));
 					strcpy($$->value.skey, $1);
-					$$->type = 1;
+					$$->type = 2;
 					$$->next = NULL;
 				}
 
@@ -203,9 +218,18 @@ condition: 		item comparator NUMBER {
 					$$->left = NULL;
 					$$->right = NULL;
 				}
-				| item comparator STRING {
+				| item comparator DOUBLEN {
 					$$ = ((struct conditions_def *)malloc(sizeof(struct conditions_def)));
 					$$->type = 1;
+					$$->litem = $1;
+					$$->intv = $3;
+					$$->cmp_op = $2;
+					$$->left = NULL;
+					$$->right = NULL;
+				}
+				| item comparator STRING {
+					$$ = ((struct conditions_def *)malloc(sizeof(struct conditions_def)));
+					$$->type = 2;
 					$$->litem = $1;
 					$$->strv = $3;
 					$$->cmp_op = $2;
@@ -249,6 +273,13 @@ up_cond:		ID '=' NUMBER {
 					$$->type = 0;
 					$$->value.intkey = $3;
 					$$->next = NULL;
+				}
+				| ID '=' DOUBLEN {
+					$$ = ((struct upcon_def *)malloc(sizeof(struct upcon_def)));
+					$$->field = $1;
+					$$->type = 1;
+					$$->value.dkey = $3;
+					$$->next = NULL;				
 				}
 				| ID '=' STRING {
 					$$ = ((struct upcon_def *)malloc(sizeof(struct upcon_def)));

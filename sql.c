@@ -219,8 +219,10 @@ void createTable(char *tableval, struct hyper_items_def *Hitemroot)
 					strcpy(dbtemp->tbroot->ffield[i].name, itemstemp->field); // 将语句中的字段名，赋值给内存中的数据表名
 					if (itemstemp->type == 0)								  // 赋值类型
 						dbtemp->tbroot->ffield[i].type = 0;
-					else
+					else if (itemstemp->type == 1)
 						dbtemp->tbroot->ffield[i].type = 1;
+					else
+						dbtemp->tbroot->ffield[i].type = 2;
 					itemstemp = itemstemp->next;
 					i++;
 				}
@@ -258,8 +260,10 @@ void createTable(char *tableval, struct hyper_items_def *Hitemroot)
 				strcpy(newtable->next->ffield[i].name, itemstemp->field);
 				if (itemstemp->type == 0)
 					newtable->next->ffield[i].type = 0;
-				else
+				else if (itemstemp->type == 1)
 					newtable->next->ffield[i].type = 1;
+				else
+					newtable->next->ffield[i].type = 2;
 				itemstemp = itemstemp->next;
 				i++;
 			}
@@ -354,9 +358,14 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 								tabletemp->ffield[i].type = 0;
 								tabletemp->ffield[i].key[temp].intkey = valtemp->value.intkey;
 							}
-							else
+							else if (valtemp->type == 1)
 							{
 								tabletemp->ffield[i].type = 1;
+								tabletemp->ffield[i].key[temp].dkey = valtemp->value.dkey;
+							}
+							else
+							{
+								tabletemp->ffield[i].type = 2;
 								strcpy(tabletemp->ffield[i].key[temp].skey, valtemp->value.skey);
 							}
 							i++; // 记录目前加了几个属性
@@ -384,9 +393,14 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 										tabletemp->ffield[j].type = 0;
 										tabletemp->ffield[j].key[temp].intkey = valtemp->value.intkey;
 									}
-									else
+									else if (valtemp->type == 1)
 									{
 										tabletemp->ffield[j].type = 1;
+										tabletemp->ffield[j].key[temp].dkey = valtemp->value.dkey;
+									}
+									else
+									{
+										tabletemp->ffield[j].type = 2;
 										strcpy(tabletemp->ffield[j].key[temp].skey, valtemp->value.skey);
 									}
 									i++; // 记录插入了几个值
@@ -472,6 +486,8 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 		{
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey == conroot->intv;
+			else if (conroot->type == 1)
+				return conroot->litem->pos->key[i].dkey == conroot->intv;
 			else
 				return strcmp(conroot->litem->pos->key[i].skey, conroot->strv) == 0;
 		}
@@ -480,6 +496,10 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 			{
 				return conroot->litem->pos->key[i].intkey > conroot->intv;
+			}
+			else if (conroot->type == 1)
+			{
+				return conroot->litem->pos->key[i].dkey > conroot->intv;
 			}
 			else
 			{
@@ -491,6 +511,8 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 		{
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey < conroot->intv;
+			else if (conroot->type == 1)
+				return conroot->litem->pos->key[i].dkey < conroot->intv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -501,6 +523,8 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 		{
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey >= conroot->intv;
+			else if (conroot->type == 1)
+				return conroot->litem->pos->key[i].dkey >= conroot->intv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -511,6 +535,8 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 		{
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey <= conroot->intv;
+			else if (conroot->type == 1)
+				return conroot->litem->pos->key[i].dkey <= conroot->intv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -521,6 +547,8 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 		{
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey != conroot->intv;
+			else if (conroot->type == 1)
+				return conroot->litem->pos->key[i].dkey != conroot->intv;
 			else
 				return strcmp(conroot->litem->pos->key[i].skey, conroot->strv) != 0;
 		}
@@ -605,6 +633,8 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 							{
 								if (tabletemp->ffield[j].type == 0)
 									printf("%-20d  ", tabletemp->ffield[j].key[i].intkey);
+								else if (tabletemp->ffield[j].type == 1)
+									printf("%-20f  ", tabletemp->ffield[j].key[i].dkey);
 								else
 									printf("%-20s  ", tabletemp->ffield[j].key[i].skey);
 							}
@@ -679,10 +709,15 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 										tabletemp->ffield[k].key[n].intkey = pTmpNode->pos->ffield[m].key[i].intkey;
 										tabletemp->ffield[k].type = 0;
 									}
+									else if (pTmpNode->pos->ffield[m].type == 1)
+									{
+										tabletemp->ffield[k].key[n].dkey = pTmpNode->pos->ffield[m].key[i].dkey;
+										tabletemp->ffield[k].type = 1;
+									}
 									else
 									{
 										strcpy(tabletemp->ffield[k].key[n].skey, pTmpNode->pos->ffield[m].key[i].skey);
-										tabletemp->ffield[k].type = 1;
+										tabletemp->ffield[k].type = 2;
 									}
 									k++;
 								}
@@ -694,10 +729,15 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 										tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
 										tabletemp->ffield[k].type = 0;
 									}
+									else if (tableroot->next->pos->ffield[m].type == 1)
+									{
+										tabletemp->ffield[k].key[n].dkey = tableroot->next->pos->ffield[m].key[j].dkey;
+										tabletemp->ffield[k].type = 1;
+									}
 									else
 									{
 										strcpy(tabletemp->ffield[k].key[n].skey, tableroot->next->pos->ffield[m].key[j].skey);
-										tabletemp->ffield[k].type = 1;
+										tabletemp->ffield[k].type = 2;
 									}
 									k++;
 								}
@@ -729,7 +769,7 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 						{
 							for (j = 0; j < tableroot->next->pos->ilen; j++)
 							{
-								if (pTmpNode->pos->ffield[pk1].type == 0 && pTmpNode->pos->ffield[pk1].key[i].intkey == tableroot->next->pos->ffield[pk2].key[j].intkey || pTmpNode->pos->ffield[pk1].type == 1 && strcmp(pTmpNode->pos->ffield[pk1].key[i].skey, tableroot->next->pos->ffield[pk2].key[j].skey) == 0)
+								if (pTmpNode->pos->ffield[pk1].type == 0 && pTmpNode->pos->ffield[pk1].key[i].intkey == tableroot->next->pos->ffield[pk2].key[j].intkey || pTmpNode->pos->ffield[pk1].type == 1 && pTmpNode->pos->ffield[pk1].key[i].dkey == tableroot->next->pos->ffield[pk2].key[j].dkey || pTmpNode->pos->ffield[pk1].type == 2 && strcmp(pTmpNode->pos->ffield[pk1].key[i].skey, tableroot->next->pos->ffield[pk2].key[j].skey) == 0)
 								{
 									k = 0;
 									for (m = len1 - 1; m >= 0; m--)
@@ -740,10 +780,15 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 											tabletemp->ffield[k].key[n].intkey = pTmpNode->pos->ffield[m].key[i].intkey;
 											tabletemp->ffield[k].type = 0;
 										}
+										else if (pTmpNode->pos->ffield[m].type == 1)
+										{
+											tabletemp->ffield[k].key[n].dkey = pTmpNode->pos->ffield[m].key[i].dkey;
+											tabletemp->ffield[k].type = 1;
+										}
 										else
 										{
 											strcpy(tabletemp->ffield[k].key[n].skey, pTmpNode->pos->ffield[m].key[i].skey);
-											tabletemp->ffield[k].type = 1;
+											tabletemp->ffield[k].type = 2;
 										}
 										k++;
 									}
@@ -757,11 +802,15 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 											tabletemp->ffield[k].key[n].intkey = tableroot->next->pos->ffield[m].key[j].intkey;
 											tabletemp->ffield[k].type = 0;
 										}
-
+										if (tableroot->next->pos->ffield[m].type == 1)
+										{
+											tabletemp->ffield[k].key[n].dkey = tableroot->next->pos->ffield[m].key[j].dkey;
+											tabletemp->ffield[k].type = 1;
+										}
 										else
 										{
 											strcpy(tabletemp->ffield[k].key[n].skey, tableroot->next->pos->ffield[m].key[j].skey);
-											tabletemp->ffield[k].type = 1;
+											tabletemp->ffield[k].type = 2;
 										}
 										k++;
 									}
@@ -840,6 +889,8 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 						{
 							if (tabletemp->ffield[j].type == 0)
 								printf("%-20d  ", tabletemp->ffield[j].key[i].intkey);
+							else if (tabletemp->ffield[j].type == 1)
+								printf("%-20f  ", tabletemp->ffield[j].key[i].dkey);
 							else
 								printf("%-20s  ", tabletemp->ffield[j].key[i].skey);
 						}
@@ -852,6 +903,8 @@ void selectWhere(struct item_def *itemroot, struct table_def *tableroot, struct 
 						{
 							if (itemtemp->pos->type == 0)
 								printf("%-20d  ", itemtemp->pos->key[i].intkey);
+							if (itemtemp->pos->type == 1)
+								printf("%-20f  ", itemtemp->pos->key[i].dkey);
 							else
 								printf("%-20s  ", itemtemp->pos->key[i].skey);
 							itemtemp = itemtemp->next;
@@ -907,6 +960,8 @@ void deletes(char *tableval, struct conditions_def *conroot)
 								{
 									if (tabletemp->ffield[j].type == 0)
 										tabletemp->ffield[j].key[k].intkey = tabletemp->ffield[j].key[k + 1].intkey;
+									else if (tabletemp->ffield[j].type == 1)
+										tabletemp->ffield[j].key[k].dkey = tabletemp->ffield[j].key[k + 1].dkey;
 									else
 										strcpy(tabletemp->ffield[j].key[k].skey, tabletemp->ffield[j].key[k + 1].skey);
 								}
@@ -988,6 +1043,8 @@ void updates(char *tableval, struct upcon_def *uproot, struct conditions_def *co
 								if (uptemp->pos->type == 0 && uptemp->type == 0)
 									uptemp->pos->key[i].intkey = uptemp->value.intkey;
 								else if (uptemp->pos->type == 1 && uptemp->type == 1)
+									uptemp->pos->key[i].dkey = uptemp->value.dkey;
+								else if (uptemp->pos->type == 2 && uptemp->type == 2)
 									strcpy(uptemp->pos->key[i].skey, uptemp->value.skey);
 								else
 								{
