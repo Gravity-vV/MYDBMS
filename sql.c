@@ -451,7 +451,7 @@ void multiInsert(char *tableval, struct item_def *itemroot, struct value_def *va
 删除等操作，有条件时，即最初传入的conroot不为空时，不会触发这条判断执行*/
 _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 {
-	if (conroot == NULL)
+	if (conroot == NULL) // 空就是没有条件意味着true
 	{
 		return TRUE;
 	}
@@ -470,13 +470,13 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			int k;
 			for (k = 0; k < tabletemp->flen; k++)
 			{
-				if (strcmp(tabletemp->ffield[k].name, conroot->litem->field) == 0)
+				if (strcmp(tabletemp->ffield[k].name, conroot->litem->field) == 0) // 表中字段名和where字段名一致
 				{
-					conroot->litem->pos = &tabletemp->ffield[k];
+					conroot->litem->pos = &tabletemp->ffield[k]; // 赋值字段在实际数据库中的位置
 					break;
 				}
 			}
-			if (conroot->litem->pos == NULL)
+			if (conroot->litem->pos == NULL) // 找不到pos
 			{
 				printf("error: 	Field %s doesn't exist!\n...\nSQL>", conroot->litem->field);
 				return FALSE;
@@ -487,7 +487,7 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey == conroot->intv;
 			else if (conroot->type == 1)
-				return conroot->litem->pos->key[i].dkey == conroot->intv;
+				return conroot->litem->pos->key[i].dkey == conroot->dv;
 			else
 				return strcmp(conroot->litem->pos->key[i].skey, conroot->strv) == 0;
 		}
@@ -499,7 +499,7 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			}
 			else if (conroot->type == 1)
 			{
-				return conroot->litem->pos->key[i].dkey > conroot->intv;
+				return conroot->litem->pos->key[i].dkey > conroot->dv;
 			}
 			else
 			{
@@ -512,7 +512,7 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey < conroot->intv;
 			else if (conroot->type == 1)
-				return conroot->litem->pos->key[i].dkey < conroot->intv;
+				return conroot->litem->pos->key[i].dkey < conroot->dv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -524,7 +524,7 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey >= conroot->intv;
 			else if (conroot->type == 1)
-				return conroot->litem->pos->key[i].dkey >= conroot->intv;
+				return conroot->litem->pos->key[i].dkey >= conroot->dv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -536,7 +536,7 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey <= conroot->intv;
 			else if (conroot->type == 1)
-				return conroot->litem->pos->key[i].dkey <= conroot->intv;
+				return conroot->litem->pos->key[i].dkey <= conroot->dv;
 			else
 			{
 				printf("error: String can not compare!\n...\nSQL>");
@@ -548,13 +548,13 @@ _Bool whereTF(int i, struct table *tabletemp, struct conditions_def *conroot)
 			if (conroot->type == 0)
 				return conroot->litem->pos->key[i].intkey != conroot->intv;
 			else if (conroot->type == 1)
-				return conroot->litem->pos->key[i].dkey != conroot->intv;
+				return conroot->litem->pos->key[i].dkey != conroot->dv;
 			else
 				return strcmp(conroot->litem->pos->key[i].skey, conroot->strv) != 0;
 		}
 	}
 }
-
+// 检查函数
 void printtable(struct table *tabletemp)
 {
 	for (int j = 0; j < tabletemp->flen; j++)

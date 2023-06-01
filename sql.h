@@ -65,6 +65,7 @@ typedef struct conditions_def /*SELECT,UPDATE,DELETE语句的条件二叉树节�
 	int type;					  /*键值类型，INT:0  STRING:1*/
 	struct item_def *litem;		  /*条件表达式左部的字段指针*/
 	int intv;					  /*整型键值存储处*/
+	int dv;						  /*浮点型键值存储处*/
 	char *strv;					  /*字符串键值*/
 	int cmp_op;					  /*操作符类型, '=':1 | '>':2 | '<':3 | '>=':4 | '<=':5 | '!=':6 | 'AND':7 | 'OR':8 */
 	struct conditions_def *left;  /*左子树指针*/

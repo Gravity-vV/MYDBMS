@@ -209,7 +209,7 @@ comparator:		'=' {$$ = 1; }//终结符
 				| "<=" {$$ = 5; }
 				| '!' '=' {$$ = 6; }
 
-condition: 		item comparator NUMBER {
+condition: 		item comparator NUMBER {//终节点
 					$$ = ((struct conditions_def *)malloc(sizeof(struct conditions_def)));
 					$$->type = 0;
 					$$->litem = $1;
@@ -222,7 +222,7 @@ condition: 		item comparator NUMBER {
 					$$ = ((struct conditions_def *)malloc(sizeof(struct conditions_def)));
 					$$->type = 1;
 					$$->litem = $1;
-					$$->intv = $3;
+					$$->dv = $3;
 					$$->cmp_op = $2;
 					$$->left = NULL;
 					$$->right = NULL;
